@@ -31,6 +31,7 @@ export default {
       try {
         InteractionHelper.patchInteractionResponses(interaction);
 
+        // 1. CHAT INPUT COMMANDS
         if (interaction.isChatInputCommand()) {
           try {
             logger.info(`Command executed: /${interaction.commandName} by ${interaction.user.tag}`, {
@@ -95,8 +96,10 @@ export default {
               commandName: interaction.commandName
             }, interactionTraceContext));
           }
-        } else if (interaction.isAutocomplete()) {
-          // Handle autocomplete interactions
+        } 
+        
+        // 2. AUTOCOMPLETE INTERACTIONS
+        else if (interaction.isAutocomplete()) {
           const focusedOption = interaction.options.getFocused(true);
           
           if (interaction.commandName === 'apply' && focusedOption.name === 'application') {
@@ -105,7 +108,6 @@ export default {
               const roles = await getApplicationRoles(client, interaction.guildId);
               const roleName = interaction.options.getString('application', false);
               
-              // Filter: only show enabled applications
               const filtered = roles.filter(role =>
                 role.enabled !== false && 
                 role.name.toLowerCase().startsWith(roleName?.toLowerCase() || '')
@@ -131,7 +133,6 @@ export default {
               const roles = await getApplicationRoles(client, interaction.guildId);
               const appName = interaction.options.getString('application', false);
               
-              // Show all applications (enabled and disabled), but mark disabled ones
               const filtered = roles.filter(role =>
                 role.name.toLowerCase().startsWith(appName?.toLowerCase() || '')
               );
@@ -163,12 +164,9 @@ export default {
                 return;
               }
               
-              // Filter out panels whose messages no longer exist
               const validPanels = [];
               for (const panel of panels) {
-                if (!panel.messageId || !panel.channelId) {
-                  continue;
-                }
+                if (!panel.messageId || !panel.channelId) continue;
                 
                 const channel = guild.channels.cache.get(panel.channelId);
                 if (!channel) {
@@ -222,7 +220,10 @@ export default {
               await interaction.respond([]);
             }
           }
-        } else if (interaction.isButton()) {
+        } 
+        
+        // 3. BUTTON INTERACTIONS
+        else if (interaction.isButton()) {
           if (interaction.customId.startsWith('shared_todo_')) {
             const parts = interaction.customId.split('_');
             const buttonType = parts.slice(0, 3).join('_');
@@ -254,9 +255,7 @@ export default {
           const button = client.buttons.get(customId);
 
           if (!button) {
-            if (!interaction.customId.includes(':')) {
-              return;
-            }
+            if (!interaction.customId.includes(':')) return;
 
             throw createError(
               `No button handler found for ${customId}`,
@@ -275,17 +274,15 @@ export default {
               handler: 'general'
             }, interactionTraceContext));
           }
-        } else if (interaction.isStringSelectMenu()) {
+        } 
+        
+        // 4. SELECT MENU INTERACTIONS
+        else if (interaction.isStringSelectMenu()) {
           const [customId, ...args] = interaction.customId.split(':');
           const selectMenu = client.selectMenus.get(customId);
 
           if (!selectMenu) {
-            if (!interaction.customId.includes(':')) {
-              // No registered handler and no ':' delimiter — this is an inline-collected
-              // select menu (e.g. ticket_config_<guildId>, jointocreate_config_<id>).
-              // Return silently so the existing MessageComponentCollector handles it.
-              return;
-            }
+            if (!interaction.customId.includes(':')) return;
 
             throw createError(
               `No select menu handler found for ${customId}`,
@@ -303,7 +300,11 @@ export default {
               customId: interaction.customId
             }, interactionTraceContext));
           }
-        } else if (interaction.isModalSubmit()) {
+        } 
+        
+        // 5. MODAL SUBMIT INTERACTIONS (Yahan thi asal dikkat)
+        else if (interaction.isModalSubmit()) {
+          // Is block ke andar ab apply modal safely handle hoga
           if (interaction.customId.startsWith('app_modal_')) {
             try {
               await handleApplicationModal(interaction);
@@ -342,11 +343,7 @@ export default {
           const modal = client.modals.get(customId);
 
           if (!modal) {
-            if (!interaction.customId.includes(':')) {
-              // No registered handler and no ':' delimiter — this is an inline-awaited
-              // modal (e.g. via awaitModalSubmit). Return silently so the caller handles it.
-              return;
-            }
+            if (!interaction.customId.includes(':')) return;
 
             throw createError(
               `No modal handler found for ${customId}`,
