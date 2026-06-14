@@ -12,6 +12,16 @@ import { logger, startupLog, shutdownLog } from './utils/logger.js';
 import { checkBirthdays } from './services/birthdayService.js';
 import { checkGiveaways } from './services/giveawayService.js';
 import { loadCommands, registerCommands as registerSlashCommands } from './handlers/commandLoader.js';
+import { ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder, ChannelType, PermissionFlagsBits } from 'discord.js';
+import { QuickDB } from 'quick.db';
+import dotenv from 'dotenv';
+
+dotenv.config();
+const db = new QuickDB();
+
+// Aapke variables (.env file se connect honge)
+const VERIFIED_ROLE_ID = process.env.VERIFIED_ROLE_ID;
+const CATEGORY_ID = process.env.CATEGORY_ID;
 
 class TitanBot extends Client {
   constructor() {
